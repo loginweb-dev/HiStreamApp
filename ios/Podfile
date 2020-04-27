@@ -44,8 +44,8 @@ def flipper_post_install(installer)
   end
 end
 
-target 'Exemple' do
-  # Pods for Exemple
+target 'HiStream' do
+  # Pods for HiStream
   pod 'FBLazyVector', :path => "../node_modules/react-native/Libraries/FBLazyVector"
   pod 'FBReactNativeSpec', :path => "../node_modules/react-native/Libraries/FBReactNativeSpec"
   pod 'RCTRequired', :path => "../node_modules/react-native/Libraries/RCTRequired"
@@ -77,7 +77,7 @@ target 'Exemple' do
   pod 'glog', :podspec => '../node_modules/react-native/third-party-podspecs/glog.podspec'
   pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec'
 
-  target 'ExempleTests' do
+  target 'HiStreamTests' do
     inherit! :complete
     # Pods for testing
   end
@@ -94,10 +94,10 @@ target 'Exemple' do
   end
 end
 
-target 'Exemple-tvOS' do
-  # Pods for Exemple-tvOS
+target 'HiStream-tvOS' do
+  # Pods for HiStream-tvOS
 
-  target 'Exemple-tvOSTests' do
+  target 'HiStream-tvOSTests' do
     inherit! :search_paths
     # Pods for testing
   end
