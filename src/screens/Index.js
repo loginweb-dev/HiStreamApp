@@ -7,12 +7,16 @@ import {
     Image,
     TextInput,
     StyleSheet,
-    AsyncStorage
+    AsyncStorage,
+    Linking,
+    ActivityIndicator
 } from 'react-native';
 import { showMessage } from "react-native-flash-message";
 
 import SplashScreen from "./SplashScreen";
-// import Conference from "./Conference";
+
+// Si está usando la url del servidor USE_API debe ser true 
+const USE_API = false;
 
 class Index extends Component {
     constructor(props){
@@ -21,7 +25,11 @@ class Index extends Component {
         this.state = {
             userName: '',
             urlMeeting: '',
-            loading: true
+            urlMeetingReal: '',
+            deepLink: false,
+            loading: true,
+            urlFocus: true,
+            joinStatus: false
         }
 
         this.bootstrapAsync();
@@ -38,18 +46,87 @@ class Index extends Component {
         }, 3000);
     };
 
+    componentDidMount() {
+        if (Platform.OS === 'android') {
+            Linking.getInitialURL().then(url => {
+                this.setState({
+                    urlMeeting: url,
+                    urlFocus: false
+                });
+            });
+        } else {
+            // Linking.addEventListener('url', this.handleOpenURL);
+        }
+    }
+
+    // componentWillUnmount() { // C
+    //     Linking.removeEventListener('url', this.handleOpenURL);
+    // }
+        
+    getMeet = () => {
+
+        if(USE_API){
+            this.joinMeet();
+            return false;
+        }
+        
+        if(this.state.urlMeeting){
+            this.setState({joinStatus: true});
+            let url_array = this.state.urlMeeting.split('/');
+            let base_url = `https://${url_array[2]}`;
+            let slug = url_array[url_array.length-1];
+            fetch(`${base_url}/api/meet/info`, {
+                method: 'POST',
+                body: JSON.stringify({'slug': slug}),
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(res => {
+                this.setState({joinStatus: false});
+                if(res.data.error){
+                    showMessage({
+                        message: "Ocurrío un error",
+                        description: "Reunión no encontrada.",
+                        type: "danger", icon: "danger",
+                    });
+                }else{
+                    this.setState({
+                        urlMeetingReal: `${res.data.server}/${res.data.name}`
+                    });
+                    console.log(res.data)
+                    setTimeout(() => {
+                        this.joinMeet();
+                    }, 100);
+                }
+            })
+            .catch(error => {
+                showMessage({
+                    message: "Ocurrío un error",
+                    description: "Ocurrión un error en nuestro servidor.",
+                    type: "danger", icon: "danger",
+                });
+            });
+        }else{
+            showMessage({
+                message: "Ocurrío un error",
+                description: "Debes ingresar el link de la conferencia.",
+                type: "danger", icon: "danger",
+            });
+        }
+    }
+
     joinMeet = () => {
-        if(this.state.urlMeeting && this.state.userName){
-            if(this.state.userName.length >= 6){
+        if(this.state.userName){
+            if(this.state.userName.length >= 4){
                 let user = {
                     name: this.state.userName
                 }
                 AsyncStorage.setItem('UserHiStream', JSON.stringify(user));
-                this.props.navigation.navigate('Conference', {link: this.state.urlMeeting, user});
+                this.props.navigation.navigate('Conference', {link: this.state.urlMeetingReal, user, deepLink: this.state.deepLink});
             }else{
                 showMessage({
                     message: "Advertencia",
-                    description: "Su nombre debe tener al menos 6 caractéres.",
+                    description: "Su nombre debe tener al menos 4 caractéres.",
                     type: "warning",
                     icon: "warning",
                 });
@@ -89,7 +166,7 @@ class Index extends Component {
                                 style={styles.input}
                                 placeholderTextColor={'rgba(255,255,255,0.3)'}
                                 placeholder="Link de la reunión"
-                                autoFocus={true}
+                                autoFocus={this.state.urlFocus ? true : false}
                                 onChangeText={text => this.setState({urlMeeting: text})}
                                 value={this.state.urlMeeting}
                             />
@@ -98,13 +175,15 @@ class Index extends Component {
                             <TextInput
                                 style={styles.input}
                                 placeholderTextColor={'rgba(255,255,255,0.3)'}
-                                placeholder="Nombre del participante"
+                                placeholder="Ingrese su nombre"
+                                autoFocus={!this.state.urlFocus ? true : false}
                                 onChangeText={text => this.setState({userName: text})}
                                 value={this.state.userName}
                             />
                         </View>
+                        {this.state.joinStatus && <ActivityIndicator size="large" color="#0A68BF" style={{ marginTop: 10 }} />}
                         <View style={{ marginTop: 20 }}>
-                            <Button title="Ingresar" onPress={this.joinMeet} />
+                            <Button title="Ingresar" onPress={this.getMeet} />
                         </View>
                     </View>
                 </ImageBackground>

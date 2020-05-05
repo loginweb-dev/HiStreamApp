@@ -8,7 +8,6 @@ import Index from './src/screens/Index';
 import Conference from "./src/screens/Conference";
 
 const Stack = createStackNavigator();
-
 function App() {
   return (
     <NavigationContainer>
