@@ -11,6 +11,7 @@ function Conference({ route, navigation }) {
         email: 'user@example.com',
         avatar: 'https:/gravatar.com/avatar/abc123',
       };
+      console.log(route.params.link)
       JitsiMeet.call(url, userInfo);
       /* Você também pode usar o JitsiMeet.audioCall (url) para chamadas apenas de áudio */
       /* Você pode terminar programaticamente a chamada com JitsiMeet.endCall () */

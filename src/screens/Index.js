@@ -51,7 +51,7 @@ class Index extends Component {
             Linking.getInitialURL().then(url => {
                 this.setState({
                     urlMeeting: url,
-                    urlFocus: false
+                    urlFocus: url ? false : true
                 });
             });
         } else {
@@ -91,12 +91,28 @@ class Index extends Component {
                     });
                 }else{
                     this.setState({
-                        urlMeetingReal: `${res.data.server}/${res.data.name}`
+                        urlMeetingReal: `${res.data.server}/${slug}`
                     });
-                    console.log(res.data)
-                    setTimeout(() => {
-                        this.joinMeet();
-                    }, 100);
+                    let date = new Date();
+                    let hora_actual = `${date.getHours().toString().padStart(2, 0)}:${date.getMinutes().toString().padStart(2, 0)}:00`
+                    
+                    if(hora_actual <= res.data.start){
+                        showMessage({
+                            message: "La reunión no ha comenzado",
+                            description: `La reunión está programada para las ${res.data.start}.`,
+                            type: "warning", icon: "warning",
+                        });
+                    }else if(hora_actual >= res.data.finish){
+                        showMessage({
+                            message: "Reunión finalizada",
+                            description: `La reunión finalizó a las ${res.data.finish}.`,
+                            type: "warning", icon: "warning",
+                        });
+                    }else{
+                        setTimeout(() => {
+                            this.joinMeet();
+                        }, 100);
+                    }
                 }
             })
             .catch(error => {
