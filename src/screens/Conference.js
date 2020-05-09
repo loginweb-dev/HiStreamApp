@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import JitsiMeet, { JitsiMeetView } from 'react-native-jitsi-meet';
+import md5 from 'md5';
 
 function Conference({ route, navigation }) {
 
@@ -8,14 +9,13 @@ function Conference({ route, navigation }) {
       const url = route.params.link;
       const userInfo = {
         displayName: route.params.user.name,
-        email: 'user@example.com',
-        avatar: 'https:/gravatar.com/avatar/abc123',
+        email: route.params.user.email,
+        avatar: `https://gravatar.com/avatar/${md5(route.params.user.email)}`,
       };
-      console.log(route.params.link)
       JitsiMeet.call(url, userInfo);
       /* Você também pode usar o JitsiMeet.audioCall (url) para chamadas apenas de áudio */
       /* Você pode terminar programaticamente a chamada com JitsiMeet.endCall () */
-    }, 1000);
+    }, 2000);
   }, [])
 
   useEffect(() => {

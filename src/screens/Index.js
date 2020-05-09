@@ -1,17 +1,18 @@
 import React, { Component } from 'react';
 import {
     View,
-    Text,
     Button,
     ImageBackground,
     Image,
     TextInput,
     StyleSheet,
-    AsyncStorage,
+    Keyboard,
     Linking,
     ActivityIndicator
 } from 'react-native';
 import { showMessage } from "react-native-flash-message";
+import AsyncStorage from '@react-native-community/async-storage';
+
 
 import SplashScreen from "./SplashScreen";
 
@@ -24,26 +25,31 @@ class Index extends Component {
 
         this.state = {
             userName: '',
+            userEmail: '',
             urlMeeting: '',
             urlMeetingReal: '',
-            deepLink: false,
             loading: true,
             urlFocus: true,
-            joinStatus: false
+            joinStatus: false,
+            showKeyboard: false
         }
 
         this.bootstrapAsync();
     }
 
     bootstrapAsync = async () => {
-        var user = await AsyncStorage.getItem('UserHiStream');
+        var user = await AsyncStorage.getItem('@UserHiStream');
         setTimeout(()=>{
             user = JSON.parse(user)
             this.setState({
                 userName: user ? user.name : '',
+                userEmail: user ? user.email : '',
                 loading: false
             });
         }, 3000);
+
+        Keyboard.addListener("keyboardDidShow", () => this.setState({showKeyboard : true}));
+        Keyboard.addListener("keyboardDidHide", () => this.setState({showKeyboard : false}));
     };
 
     componentDidMount() {
@@ -59,12 +65,11 @@ class Index extends Component {
         }
     }
 
-    // componentWillUnmount() { // C
+    // componentWillUnmount() {
     //     Linking.removeEventListener('url', this.handleOpenURL);
     // }
         
     getMeet = () => {
-
         if(USE_API){
             this.joinMeet();
             return false;
@@ -95,6 +100,11 @@ class Index extends Component {
                     });
                     let date = new Date();
                     let hora_actual = `${date.getHours().toString().padStart(2, 0)}:${date.getMinutes().toString().padStart(2, 0)}:00`
+                    let meet_full = false;
+
+                    if(res.data.max_person){
+                        meet_full = res.data.participants_active >= res.data.max_person ? true : false;
+                    }
                     
                     if(hora_actual <= res.data.start){
                         showMessage({
@@ -108,6 +118,13 @@ class Index extends Component {
                             description: `La reunión finalizó a las ${res.data.finish}.`,
                             type: "warning", icon: "warning",
                         });
+                    }else if(meet_full){
+                        fetch(`${base_url}/conferencia/join/reject/${res.data.id}`);
+                        showMessage({
+                            message: "Reunión llena",
+                            description: `La reunión no permite más participantes.`,
+                            type: "warning", icon: "warning",
+                        });
                     }else{
                         setTimeout(() => {
                             this.joinMeet();
@@ -116,6 +133,7 @@ class Index extends Component {
                 }
             })
             .catch(error => {
+                this.setState({joinStatus: false});
                 showMessage({
                     message: "Ocurrío un error",
                     description: "Ocurrión un error en nuestro servidor.",
@@ -135,10 +153,11 @@ class Index extends Component {
         if(this.state.userName){
             if(this.state.userName.length >= 4){
                 let user = {
-                    name: this.state.userName
+                    name: this.state.userName,
+                    email: this.state.userEmail
                 }
-                AsyncStorage.setItem('UserHiStream', JSON.stringify(user));
-                this.props.navigation.navigate('Conference', {link: this.state.urlMeetingReal, user, deepLink: this.state.deepLink});
+                AsyncStorage.setItem('@UserHiStream', JSON.stringify(user));
+                this.props.navigation.navigate('Conference', {link: this.state.urlMeetingReal, user});
             }else{
                 showMessage({
                     message: "Advertencia",
@@ -173,8 +192,8 @@ class Index extends Component {
             >
                 <ImageBackground source={require('../assets/images/background.jpg')} style={styles.image}>
                     <View style={styles.maskDark} />
-                    <View style={{ alignItems: 'center', position: 'absolute', left: 0, right: 0, top: -30 }}>
-                        <Image source={require('../assets/images/logo.png')} style={{ width: '70%', resizeMode: 'contain', }} />
+                    <View style={{ alignItems: 'center', position: 'absolute', left: 0, right: 0, top: this.state.showKeyboard ? -50 : -30 }}>
+                        <Image source={require('../assets/images/logo.png')} style={{ width: this.state.showKeyboard ? '30%' : '70%', resizeMode: 'contain', }} />
                     </View>
                     <View style={{ marginHorizontal: 20, marginTop: 100 }}>
                         <View style={{ marginVertical: 10 }}>
@@ -185,6 +204,7 @@ class Index extends Component {
                                 autoFocus={this.state.urlFocus ? true : false}
                                 onChangeText={text => this.setState({urlMeeting: text})}
                                 value={this.state.urlMeeting}
+                                autoCapitalize='none'
                             />
                         </View>
                         <View style={{ marginVertical: 10 }}>
@@ -197,9 +217,20 @@ class Index extends Component {
                                 value={this.state.userName}
                             />
                         </View>
+                        <View style={{ marginVertical: 10 }}>
+                            <TextInput
+                                style={styles.input}
+                                placeholderTextColor={'rgba(255,255,255,0.3)'}
+                                placeholder="Ingrese su email (Opcional)"
+                                onChangeText={text => this.setState({userEmail: text})}
+                                value={this.state.userEmail}
+                                keyboardType='email-address'
+                                autoCapitalize='none'
+                            />
+                        </View>
                         {this.state.joinStatus && <ActivityIndicator size="large" color="#0A68BF" style={{ marginTop: 10 }} />}
                         <View style={{ marginTop: 20 }}>
-                            <Button title="Ingresar" onPress={this.getMeet} />
+                            <Button title="Ingresar" disabled={this.state.joinStatus} onPress={this.getMeet} />
                         </View>
                     </View>
                 </ImageBackground>
