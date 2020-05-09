@@ -8,11 +8,10 @@ import {
     StyleSheet,
     Keyboard,
     Linking,
-    ActivityIndicator
+    ActivityIndicator,
+    AsyncStorage
 } from 'react-native';
 import { showMessage } from "react-native-flash-message";
-import AsyncStorage from '@react-native-community/async-storage';
-
 
 import SplashScreen from "./SplashScreen";
 
@@ -38,7 +37,7 @@ class Index extends Component {
     }
 
     bootstrapAsync = async () => {
-        var user = await AsyncStorage.getItem('@UserHiStream');
+        var user = await AsyncStorage.getItem('UserHiStream');
         setTimeout(()=>{
             user = JSON.parse(user)
             this.setState({
@@ -156,7 +155,7 @@ class Index extends Component {
                     name: this.state.userName,
                     email: this.state.userEmail
                 }
-                AsyncStorage.setItem('@UserHiStream', JSON.stringify(user));
+                AsyncStorage.setItem('UserHiStream', JSON.stringify(user));
                 this.props.navigation.navigate('Conference', {link: this.state.urlMeetingReal, user});
             }else{
                 showMessage({
